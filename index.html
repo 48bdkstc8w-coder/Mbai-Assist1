@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>AFPMBAI AI Assistant</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    /* iOS Momentum Scrolling and Mobile Polish */
+    body {
+      -webkit-tap-highlight-color: transparent;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+    .chat-scroll {
+      scroll-behavior: smooth;
+      -webkit-overflow-scrolling: touch;
+    }
+  </style>
+</head>
+<body class="bg-slate-100 flex flex-col h-screen overflow-hidden text-slate-800">
+
+  <!-- HEADER -->
+  <header class="bg-emerald-900 text-white px-4 py-3 shadow-md flex items-center justify-between z-10">
+    <div class="flex items-center space-x-3">
+      <div class="w-9 h-9 rounded-full bg-emerald-700 border border-emerald-400 flex items-center justify-center font-bold text-sm tracking-wider">
+        MB
+      </div>
+      <div>
+        <h1 class="font-semibold text-sm sm:text-base leading-tight">AFPMBAI AI Assistant</h1>
+        <p class="text-[11px] text-emerald-200">Information & Services Guide</p>
+      </div>
+    </div>
+    <div class="flex items-center space-x-2">
+      <button onclick="toggleConfigModal()" class="text-xs bg-emerald-800 hover:bg-emerald-700 border border-emerald-600 px-2.5 py-1.5 rounded-lg flex items-center space-x-1 transition">
+        <i class="fa-solid fa-gear"></i>
+        <span class="hidden sm:inline">Settings</span>
+      </button>
+      <button onclick="resetChat()" class="text-xs bg-emerald-800 hover:bg-emerald-700 border border-emerald-600 px-2.5 py-1.5 rounded-lg transition" title="Clear Chat">
+        <i class="fa-solid fa-rotate-right"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- PRIVACY & DISCLAIMER NOTICE BANNER -->
+  <div class="bg-amber-50 border-b border-amber-200 px-3 py-1.5 text-[11px] text-amber-900 flex items-center justify-between">
+    <div class="flex items-center space-x-1.5">
+      <i class="fa-solid fa-shield-halved text-amber-700"></i>
+      <span><strong>Privacy Notice:</strong> Do not enter sensitive info (AFP/PNP Serial #, ATM PIN, or passwords).</span>
+    </div>
+    <span id="activeModeBadge" class="bg-emerald-200 text-emerald-900 px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase">Local Mode</span>
+  </div>
+
+  <!-- CHAT MESSAGES CONTAINER -->
+  <main id="chatBox" class="flex-1 overflow-y-auto p-4 space-y-4 chat-scroll">
+    <!-- Welcome Message -->
+    <div class="flex items-start space-x-2">
+      <div class="w-8 h-8 rounded-full bg-emerald-800 text-white flex items-center justify-center text-xs shrink-0 mt-1">
+        <i class="fa-solid fa-robot"></i>
+      </div>
+      <div class="bg-white border border-slate-200 p-3.5 rounded-2xl rounded-tl-none shadow-sm max-w-[85%] text-sm leading-relaxed">
+        <p class="font-medium text-emerald-950 mb-1">Mabuhay! Ako ang iyong AFPMBAI AI Assistant.</p>
+        <p class="text-slate-600 mb-2">I can help you understand AFPMBAI membership, basic life insurance, loans, underwriting requirements, and claims procedures in English or Filipino.</p>
+        <p class="text-[11px] text-slate-400 border-t border-slate-100 pt-1.5 italic">Note: I provide informational guidance based on standard policies. Final approval and official account verification always require AFPMBAI branch validation.</p>
+      </div>
+    </div>
+  </main>
+
+  <!-- QUICK SUGGESTIONS -->
+  <div class="px-3 py-1.5 bg-slate-50 border-t border-slate-200 overflow-x-auto whitespace-nowrap flex space-x-2 text-xs no-scrollbar">
+    <button onclick="sendQuickPrompt('Paano mag-claim ng Death Benefit at ano ang requirements?')" class="px-2.5 py-1 bg-white border border-slate-300 rounded-full hover:bg-slate-100 text-slate-700 transition">
+      ⚰️ Death Benefit Claim
+    </button>
+    <button onclick="sendQuickPrompt('Ano ang mga requirements para sa Salary Loan?')" class="px-2.5 py-1 bg-white border border-slate-300 rounded-full hover:bg-slate-100 text-slate-700 transition">
+      💰 Salary Loan Requirements
+    </button>
+    <button onclick="sendQuickPrompt('Sino-sino ang eligible maging miyembro ng AFPMBAI?')" class="px-2.5 py-1 bg-white border border-slate-300 rounded-full hover:bg-slate-100 text-slate-700 transition">
+      🪖 Eligible Branches & Members
+    </button>
+    <button onclick="sendQuickPrompt('Ano ang Basic Group Term Insurance (BGTI)?')" class="px-2.5 py-1 bg-white border border-slate-300 rounded-full hover:bg-slate-100 text-slate-700 transition">
+      🛡️ BGTI Explanation
+    </button>
+  </div>
+
+  <!-- INPUT AREA -->
+  <footer class="bg-white border-t border-slate-200 p-3 pb-safe">
+    <form id="chatForm" onsubmit="handleSend(event)" class="flex items-end space-x-2">
+      <textarea
+        id="userInput"
+        rows="1"
+        placeholder="Ask in English or Filipino..."
+        class="flex-1 resize-none bg-slate-100 rounded-2xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-700 max-h-28 overflow-y-auto border border-transparent focus:border-emerald-600 transition"
+        onkeydown="handleKeyDown(event)"
+      ></textarea>
+      <button
+        type="submit"
+        id="sendBtn"
+        class="bg-emerald-800 text-white rounded-full w-10 h-10 flex items-center justify-center hover:bg-emerald-900 transition disabled:opacity-50 shrink-0"
+      >
+        <i class="fa-solid fa-arrow-up"></i>
+      </button>
+    </form>
+  </footer>
+
+  <!-- SETTINGS / CONFIG MODAL -->
+  <div id="configModal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl w-full max-w-sm p-5 shadow-2xl">
+      <div class="flex justify-between items-center mb-3">
+        <h3 class="font-bold text-slate-800 text-base">Assistant Settings</h3>
+        <button onclick="toggleConfigModal()" class="text-slate-400 hover:text-slate-600">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <p class="text-xs text-slate-500 mb-4">
+        You can test the prototype offline or connect a <strong>Free Google Gemini API key</strong> (no credit card required).
+      </p>
+
+      <div class="space-y-3">
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Operating Engine</label>
+          <select id="engineSelector" onchange="toggleApiInputVisibility()" class="w-full text-xs p-2 rounded border border-slate-300 focus:outline-emerald-700">
+            <option value="offline">Built-in Knowledge Engine (Free / No Key)</option>
+            <option value="gemini">Google Gemini 1.5 Flash (Free API Key)</option>
+          </select>
+        </div>
+
+        <div id="apiKeyGroup" class="hidden">
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Gemini API Key</label>
+          <input 
+            type="password" 
+            id="apiKeyInput" 
+            placeholder="AIzaSy..." 
+            class="w-full text-xs p-2 rounded border border-slate-300 focus:outline-emerald-700"
+          />
+          <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-[10px] text-emerald-700 underline mt-1 block">
+            Get a free key from Google AI Studio &rarr;
+          </a>
+        </div>
+      </div>
+
+      <div class="mt-5 flex justify-end space-x-2">
+        <button onclick="toggleConfigModal()" class="px-3 py-1.5 text-xs text-slate-600 rounded">Cancel</button>
+        <button onclick="saveSettings()" class="px-4 py-1.5 text-xs bg-emerald-800 text-white rounded-lg font-medium hover:bg-emerald-900 transition">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* AFPMBAI SYSTEM PROMPT & STRICT GUARDRAILS */
+    const AFPMBAI_SYSTEM_PROMPT = `
+You are the official "AFPMBAI AI Assistant" for the Armed Forces and Police Mutual Benefit Association, Inc. (Philippines).
+Your purpose is to assist AFP, PNP, BJMP, BFP, PCG, BuCor, and civilian personnel in understanding AFPMBAI products, claims, and underwriting.
+
+STRICT OPERATING RULES:
+1. Languages: Respond clearly in English or Filipino (Tagalog), matching the user's language.
+2. Zero Hallucination: NEVER invent benefits, loan amounts, processing days, or interest rates.
+3. Official Warning: If an exact figure, calculation, or internal policy is variable or unverified, state:
+   "Paalala: Ang halaga o requirements ay maaaring magbago depende sa iyong unit, active/retired status, at verified ledger sa AFPMBAI branch."
+4. Privacy First: NEVER prompt for, collect, or accept confidential data (e.g., AFP/PNP Serial Numbers, bank accounts, Passwords, or ATM PINs). Advise users to keep these secure.
+5. Claims & Loans Structure: Always format answers into clear, actionable steps:
+   - Step 1: Document Checklist
+   - Step 2: Submission Channel (Branch, Extension Office, or Official Portal)
+   - Step 3: Verification & Settlement
+6. Verification Referral: For balance inquiries or actual loan capacity, direct members to:
+   - AFPMBAI Portal: https://afpmbai.com.ph
+   - Email: mail@afpmbai.com.ph
+   - Main Office: Col Bonny Serrano Ave cor EDSA, Camp Aguinaldo, Quezon City
+`;
+
+    /* BUILT-IN FALLBACK KNOWLEDGE BASE (No API key needed) */
+    const LOCAL_KB = [
+      {
+        keywords: ["death", "namatay", "claim", "patay", "funeral", "libing"],
+        reply: `**Proseso ng Pag-Claim ng Death Benefit (Basic Group Term Insurance / Individual Plans):**
+
+**Hakbang 1: Ihanda ang mga Pangunahing Dokumento**
+1. Certified True Copy ng **Death Certificate** mula sa PSA (Philippine Statistics Authority) o Local Civil Registrar (LCR).
+2. **Marriage Certificate** (PSA) kung ang beneficiary ay asawa; o **Birth Certificate** (PSA) kung anak/magulang.
+3. Valid Government-Issued IDs ng lehitimong mga beneficiary.
+4. Official **Police/Investigative Report** o Line-of-Duty (LOD) certificate kung ang pagkamatay ay sanhi ng aksidente o engkuwentro.
+
+**Hakbang 2: Pagsusumite**
+- Dalhin ang mga dokumento sa pinakamalapit na **AFPMBAI Branch o Extension Office** sa inyong rehiyon.
+
+⚠️ *Paalala: Huwag ibigay ang inyong ATM card o PIN kaninuman. Lahat ng pagbabayad ay idinadaan sa rehistradong payroll/bank account o opisyal na tseke.*`
+      },
+      {
+        keywords: ["salary loan", "umutang", "hiram", "loan requirements", "loan"],
+        reply: `**AFPMBAI Salary Loan Requirements & Guidelines:**
+
+**Mga Karaniwang Kinakailangan:**
+1. **Duly accomplished Loan Application Form** (na-download sa official portal o kinuha sa branch).
+2. Pinakahuling **Payslip** (karaniwan ay huling 2 o 3 buwan na may minimum net take-home pay alinsunod sa batas ng inyong branch of service).
+3. Dalawang (2) Valid IDs (kabilang ang iyong AFP/PNP/PCG/BJMP/BFP Active ID).
+4. Permanent/Regular status sa serbisyo.
+
+**Hakbang sa Pag-apply:**
+- Maaaring mag-apply online sa opisyal na **AFPMBAI Member Portal** o magtungo sa pinakamalapit na extension office.
+
+⚠️ *Paalala: Ang maximum loanable amount at amortization ay nakadepende sa iyong take-home pay at umiiral na interest tables ng AFPMBAI.*`
+      },
+      {
+        keywords: ["eligible", "membership", "sino", "who can join", "miyembro"],
+        reply: `**Sino ang mga Kwalipikadong Maging Miyembro ng AFPMBAI?**
+
+1. **Uniformed Services:**
+   - Armed Forces of the Philippines (AFP - Army, Navy, Air Force)
+   - Philippine National Police (PNP)
+   - Bureau of Fire Protection (BFP)
+   - Bureau of Jail Management and Penology (BJMP)
+   - Philippine Coast Guard (PCG)
+   - Bureau of Corrections (BuCor)
+2. **Civilian Employees** na regular sa Department of National Defense (DND) at mga kaugnay na ahensya.
+3. **Legal Dependents** (para sa ilang individual insurance at educational plans).`
+      },
+      {
+        keywords: ["bgti", "basic group", "insurance"],
+        reply: `**Ano ang Basic Group Term Insurance (BGTI)?**
+
+Ang **BGTI** ay ang mandatory basic life insurance protection para sa lahat ng regular at aktibong miyembro ng uniformed services (AFP, PNP, atbp.).
+
+**Pangunahing Benepisyo:**
+- Death Benefit (Natural o Accidental)
+- Line-of-Duty compensation package
+- Total and Permanent Disability (TPD) benefit alinsunod sa terms of coverage
+
+⚠️ *Paalala: Para malaman ang active coverage status at policy endorsements, makipag-ugnayan sa inyong Unit Personnel/Morale & Welfare Office o sa pinakamalapit na AFPMBAI branch.*`
+      }
+    ];
+
+    let state = {
+      engine: localStorage.getItem("afp_engine") || "offline",
+      apiKey: localStorage.getItem("afp_key") || "",
+      chatHistory: []
+    };
+
+    function updateBadge() {
+      const badge = document.getElementById("activeModeBadge");
+      if (state.engine === "gemini" && state.apiKey) {
+        badge.innerText = "Gemini AI";
+        badge.className = "bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase";
+      } else {
+        badge.innerText = "Local Mode";
+        badge.className = "bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase";
+      }
+    }
+
+    function toggleConfigModal() {
+      const modal = document.getElementById("configModal");
+      document.getElementById("engineSelector").value = state.engine;
+      document.getElementById("apiKeyInput").value = state.apiKey;
+      toggleApiInputVisibility();
+      modal.classList.toggle("hidden");
+    }
+
+    function toggleApiInputVisibility() {
+      const isGemini = document.getElementById("engineSelector").value === "gemini";
+      document.getElementById("apiKeyGroup").classList.toggle("hidden", !isGemini);
+    }
+
+    function saveSettings() {
+      state.engine = document.getElementById("engineSelector").value;
+      state.apiKey = document.getElementById("apiKeyInput").value.trim();
+      localStorage.setItem("afp_engine", state.engine);
+      localStorage.setItem("afp_key", state.apiKey);
+      updateBadge();
+      toggleConfigModal();
+    }
+
+    function handleKeyDown(e) {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        handleSend(e);
+      }
+    }
+
+    function sendQuickPrompt(text) {
+      document.getElementById("userInput").value = text;
+      handleSend(new Event("submit"));
+    }
+
+    function appendMessage(sender, text) {
+      const chatBox = document.getElementById("chatBox");
+      const wrapper = document.createElement("div");
+
+      if (sender === "user") {
+        wrapper.className = "flex justify-end";
+        wrapper.innerHTML = `
+          <div class="bg-emerald-800 text-white p-3 rounded-2xl rounded-tr-none shadow-sm max-w-[85%] text-sm leading-relaxed break-words">
+            ${escapeHTML(text)}
+          </div>
+        `;
+      } else {
+        wrapper.className = "flex items-start space-x-2";
+        wrapper.innerHTML = `
+          <div class="w-8 h-8 rounded-full bg-emerald-800 text-white flex items-center justify-center text-xs shrink-0 mt-1">
+            <i class="fa-solid fa-robot"></i>
+          </div>
+          <div class="bg-white border border-slate-200 p-3.5 rounded-2xl rounded-tl-none shadow-sm max-w-[85%] text-sm leading-relaxed text-slate-800 break-words">
+            ${formatMarkdown(text)}
+          </div>
+        `;
+      }
+
+      chatBox.appendChild(wrapper);
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    function appendTypingIndicator() {
+      const chatBox = document.getElementById("chatBox");
+      const id = "typing-" + Date.now();
+      const div = document.createElement("div");
+      div.id = id;
+      div.className = "flex items-start space-x-2";
+      div.innerHTML = `
+        <div class="w-8 h-8 rounded-full bg-emerald-800 text-white flex items-center justify-center text-xs shrink-0 mt-1">
+          <i class="fa-solid fa-ellipsis"></i>
+        </div>
+        <div class="bg-white border border-slate-200 p-3 rounded-2xl rounded-tl-none text-xs text-slate-500 italic">
+          Nag-iisip...
+        </div>
+      `;
+      chatBox.appendChild(div);
+      chatBox.scrollTop = chatBox.scrollHeight;
+      return id;
+    }
+
+    function removeTypingIndicator(id) {
+      const el = document.getElementById(id);
+      if (el) el.remove();
+    }
+
+    async function handleSend(e) {
+      e.preventDefault();
+      const input = document.getElementById("userInput");
+      const query = input.value.trim();
+      if (!query) return;
+
+      input.value = "";
+      appendMessage("user", query);
+
+      const typingId = appendTypingIndicator();
+
+      if (state.engine === "gemini" && state.apiKey) {
+        try {
+          const aiResponse = await callGeminiAPI(query);
+          removeTypingIndicator(typingId);
+          appendMessage("assistant", aiResponse);
+        } catch (err) {
+          removeTypingIndicator(typingId);
+          appendMessage("assistant", `**Connection Error:** ${err.message}. Nag-fall back muna tayo sa basic engine.`);
+          const fallback = localSearch(query);
+          appendMessage("assistant", fallback);
+        }
+      } else {
+        // Local simulation delay
+        setTimeout(() => {
+          removeTypingIndicator(typingId);
+          const answer = localSearch(query);
+          appendMessage("assistant", answer);
+        }, 500);
+      }
+    }
+
+    function localSearch(query) {
+      const q = query.toLowerCase();
+      for (const item of LOCAL_KB) {
+        if (item.keywords.some(kw => q.includes(kw))) {
+          return item.reply;
+        }
+      }
+      return `Hindi ko pa tiyak ang eksaktong patakaran ukol sa iyong tanong, at **mahigpit na ipinagbabawal ang pag-imbento ng impormasyon ukol sa AFPMBAI policies**.
+
+Upang makakuha ng lehitimo at opisyal na tulong, mangyaring makipag-ugnayan sa:
+- **Opisyal na Website:** https://afpmbai.com.ph
+- **Email:** mail@afpmbai.com.ph
+- **Main Office:** Col. Bonny Serrano Ave., Camp Aguinaldo, Quezon City o sa pinakamalapit na Extension Office sa inyong kampo.`;
+    }
+
+    async function callGeminiAPI(userQuery) {
+      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${state.apiKey}`;
+      
+      const payload = {
+        contents: [
+          { role: "user", parts: [{ text: AFPMBAI_SYSTEM_PROMPT }] },
+          ...state.chatHistory,
+          { role: "user", parts: [{ text: userQuery }] }
+        ]
+      };
+
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error?.message || `HTTP ${res.status}`);
+      }
+
+      const data = await res.json();
+      const botReply = data.candidates?.[0]?.content?.parts?.[0]?.text || "Walang natanggap na tugon.";
+
+      // Keep recent context
+      state.chatHistory.push({ role: "user", parts: [{ text: userQuery }] });
+      state.chatHistory.push({ role: "model", parts: [{ text: botReply }] });
+      if (state.chatHistory.length > 8) state.chatHistory = state.chatHistory.slice(-8);
+
+      return botReply;
+    }
+
+    function resetChat() {
+      state.chatHistory = [];
+      const chatBox = document.getElementById("chatBox");
+      chatBox.innerHTML = `
+        <div class="flex items-start space-x-2">
+          <div class="w-8 h-8 rounded-full bg-emerald-800 text-white flex items-center justify-center text-xs shrink-0 mt-1">
+            <i class="fa-solid fa-robot"></i>
+          </div>
+          <div class="bg-white border border-slate-200 p-3.5 rounded-2xl rounded-tl-none shadow-sm max-w-[85%] text-sm leading-relaxed">
+            <p class="font-medium text-emerald-950 mb-1">Mabuhay! Naka-reset na ang usapan.</p>
+            <p class="text-slate-600">May maipaglilingkod ba ako tungkol sa iyong AFPMBAI benefits o requirements?</p>
+          </div>
+        </div>
+      `;
+    }
+
+    function escapeHTML(str) {
+      return str.replace(/[&<>'"]/g, tag => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+      }[tag] || tag));
+    }
+
+    // Basic markdown helper (bold, lists, linebreaks)
+    function formatMarkdown(text) {
+      let formatted = escapeHTML(text);
+      formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+      formatted = formatted.replace(/\*(.*?)\*/g, '<em>$1</em>');
+      formatted = formatted.replace(/\n/g, '<br/>');
+      return formatted;
+    }
+
+    // Initial setup
+    updateBadge();
+  </script>
+</body>
+</html>
